@@ -55,14 +55,29 @@ import static org.springframework.cloud.netflix.ribbon.RibbonUtils.updateToSecur
 public class FeignLoadBalancer extends
 		AbstractLoadBalancerAwareClient<FeignLoadBalancer.RibbonRequest, FeignLoadBalancer.RibbonResponse> {
 
+	/**
+	 * ribbon的配置
+	 */
 	private final RibbonProperties ribbon;
 
+	/**
+	 * 连接超时时间
+	 */
 	protected int connectTimeout;
 
+	/**
+	 * 读取超时时间
+	 */
 	protected int readTimeout;
 
+	/**
+	 * 客户端的配置
+	 */
 	protected IClientConfig clientConfig;
 
+	/**
+	 * 服务内省器
+	 */
 	protected ServerIntrospector serverIntrospector;
 
 	public FeignLoadBalancer(ILoadBalancer lb, IClientConfig clientConfig,
@@ -89,6 +104,7 @@ public class FeignLoadBalancer extends
 		else {
 			options = new Request.Options(this.connectTimeout, this.readTimeout);
 		}
+		//调用execute()方法开始执行，这里会调用
 		Response response = request.client().execute(request.toRequest(), options);
 		return new RibbonResponse(request.getUri(), response);
 	}

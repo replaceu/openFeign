@@ -60,8 +60,14 @@ class FeignClientsRegistrar
 	// patterned after Spring Integration IntegrationComponentScanRegistrar
 	// and RibbonClientsConfigurationRegistgrar
 
+	/**
+	 * 资源加载
+	 */
 	private ResourceLoader resourceLoader;
 
+	/**
+	 * 环境对象
+	 */
 	private Environment environment;
 
 	FeignClientsRegistrar() {
@@ -136,7 +142,16 @@ class FeignClientsRegistrar
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata metadata,
 			BeanDefinitionRegistry registry) {
+		/**
+		 * 注解注解上面标记的 defaultConfiguration 配置对象，配置类通过class进行表示
+		 * 使用 FeignClientSpecification 对其进行包装
+		 */
 		registerDefaultConfiguration(metadata, registry);
+		/**
+		 * 处理 @FeignClient 注解并且会将注解中配置的 configuration 属性也注册到容器当中
+		 * bean定义的名称 @FeignClient[name].FeignClientSpecification.class.name，然后将接口注入
+		 * 然后将接口包装成 FeignClientFactoryBean 类型
+		 */
 		registerFeignClients(metadata, registry);
 	}
 
@@ -213,11 +228,17 @@ class FeignClientsRegistrar
 		definition.addPropertyValue("path", getPath(attributes));
 		String name = getName(attributes);
 		definition.addPropertyValue("name", name);
+		//读取上下文的id，如果没有指定就会去读取 serviceId或者name属性
 		String contextId = getContextId(attributes);
+		//上下文的id
 		definition.addPropertyValue("contextId", contextId);
+		//class的类型
 		definition.addPropertyValue("type", className);
+		//解码器不存在
 		definition.addPropertyValue("decode404", attributes.get("decode404"));
+		//回调函数类
 		definition.addPropertyValue("fallback", attributes.get("fallback"));
+		//回调函数工厂类
 		definition.addPropertyValue("fallbackFactory", attributes.get("fallbackFactory"));
 		definition.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_TYPE);
 
@@ -234,7 +255,7 @@ class FeignClientsRegistrar
 		if (StringUtils.hasText(qualifier)) {
 			alias = qualifier;
 		}
-
+		//将bean定义注入到容器中
 		BeanDefinitionHolder holder = new BeanDefinitionHolder(beanDefinition, className,
 				new String[] { alias });
 		BeanDefinitionReaderUtils.registerBeanDefinition(holder, registry);

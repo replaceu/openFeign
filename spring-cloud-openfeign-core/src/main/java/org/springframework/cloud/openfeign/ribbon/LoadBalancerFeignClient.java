@@ -35,10 +35,13 @@ import org.springframework.cloud.netflix.ribbon.SpringClientFactory;
  */
 public class LoadBalancerFeignClient implements Client {
 
+	//默认的请求参数，主要设置连接、读取超时时间
 	static final Request.Options DEFAULT_OPTIONS = new Request.Options();
 
+	//创建的默认客户端
 	private final Client delegate;
 
+	//对ribbon中的 SpringClientFactory 对象进行包装
 	private CachingSpringLoadBalancerFactory lbClientFactory;
 
 	private SpringClientFactory clientFactory;
@@ -72,13 +75,22 @@ public class LoadBalancerFeignClient implements Client {
 	@Override
 	public Response execute(Request request, Request.Options options) throws IOException {
 		try {
+			//创建uri对象
 			URI asUri = URI.create(request.url());
+			//获取到服务的名称
 			String clientName = asUri.getHost();
 			URI uriWithoutHost = cleanUrl(request.url(), clientName);
+			//创建请求对象
 			FeignLoadBalancer.RibbonRequest ribbonRequest = new FeignLoadBalancer.RibbonRequest(
 					this.delegate, request, uriWithoutHost);
-
+			//根据客户端名称去获取到属于自己的配置文件对象
 			IClientConfig requestConfig = getClientConfig(options, clientName);
+			/**
+			 * 通过 CachingSpringLoadBalancerFactory 创建客户端，其中获取到的是 FeignLoadBalancer，
+			 * 调用的父类：com.netflix.client.AbstractLoadBalancerAwareClient#executeWithLoadBalancer() 方法
+			 * 方法中用到了 LoadBalancerCommand对象通过RxJava响应式编程进行编写的，重点方法是 submit() 方法中通过
+			 * selectServer()进行对应的服务选择，在调用 LoadBalancerContext 中调用 ILoadBalancer.choose() 进行服务的选择
+			 */
 			return lbClient(clientName)
 					.executeWithLoadBalancer(ribbonRequest, requestConfig).toResponse();
 		}

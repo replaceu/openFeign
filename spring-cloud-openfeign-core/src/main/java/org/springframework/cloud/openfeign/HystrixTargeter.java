@@ -34,20 +34,27 @@ class HystrixTargeter implements Targeter {
 	@Override
 	public <T> T target(FeignClientFactoryBean factory, Feign.Builder feign,
 			FeignContext context, Target.HardCodedTarget<T> target) {
+		//判断以下如果类型不是 Hystrix 提供的类型直接通过传递的target进行创建
 		if (!(feign instanceof feign.hystrix.HystrixFeign.Builder)) {
 			return feign.target(target);
 		}
+		//builder都是 HystrixFeign.Builder
 		feign.hystrix.HystrixFeign.Builder builder = (feign.hystrix.HystrixFeign.Builder) feign;
+		//计算出回调函数的名称
 		String name = StringUtils.isEmpty(factory.getContextId()) ? factory.getName()
 				: factory.getContextId();
+		//从容器中获取到 SetterFactory
 		SetterFactory setterFactory = getOptional(name, context, SetterFactory.class);
 		if (setterFactory != null) {
 			builder.setterFactory(setterFactory);
 		}
+		//获取到接口中的回调函数类
 		Class<?> fallback = factory.getFallback();
 		if (fallback != void.class) {
+			//如果存在回调函数类，那么直接通过容器进行创建
 			return targetWithFallback(name, context, target, builder, fallback);
 		}
+		//如果指定的是回调工厂类，那么通过工厂对象进行创建
 		Class<?> fallbackFactory = factory.getFallbackFactory();
 		if (fallbackFactory != void.class) {
 			return targetWithFallbackFactory(name, context, target, builder,

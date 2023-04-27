@@ -67,28 +67,66 @@ class FeignClientFactoryBean
 	 * lifecycle race condition.
 	 ***********************************/
 
+	/**
+	 * 接口的类型
+	 */
 	private Class<?> type;
 
+	/**
+	 * 指定的名称
+	 */
 	private String name;
 
+	/**
+	 * 服务的请求接口地址
+	 */
 	private String url;
 
+	/**
+	 * 上下文id，如果没有直接指定会通过 serviceId或者name进行获取
+	 */
 	private String contextId;
 
+	/**
+	 * 调用路径
+	 */
 	private String path;
 
+	/**
+	 * 解码器找不到时是否返回404
+	 */
 	private boolean decode404;
 
+	/**
+	 * 是否需要继承父上下文
+	 */
 	private boolean inheritParentContext = true;
 
+	/**
+	 * spring容器
+	 */
 	private ApplicationContext applicationContext;
 
+	/**
+	 * 回调类
+	 */
 	private Class<?> fallback = void.class;
 
+	/**
+	 * 回调类的工厂类
+	 */
 	private Class<?> fallbackFactory = void.class;
 
+	/**
+	 * 读取超时的时间
+	 * 默认读取超时60秒
+	 * 连接超时10秒
+	 */
 	private int readTimeoutMillis = new Request.Options().readTimeoutMillis();
 
+	/**
+	 * 连接超时的时间
+	 */
 	private int connectTimeoutMillis = new Request.Options().connectTimeoutMillis();
 
 	@Override
@@ -101,26 +139,32 @@ class FeignClientFactoryBean
 		FeignLoggerFactory loggerFactory = get(context, FeignLoggerFactory.class);
 		Logger logger = loggerFactory.create(type);
 
-		// @formatter:off
+		//先从容器中获取到 Builder 类型，在 FeignClientsConfiguration 就进行了初始化，如果导入了hystrix的包，那么就会创建为 feign.hystrix.HystrixFeign.Builder 类型
 		Feign.Builder builder = get(context, Feign.Builder.class)
 				// required values
 				.logger(logger)
+				//容器中获取到 Encoder：默认类型 SpringEncoder
 				.encoder(get(context, Encoder.class))
+				//容器中获取到 Decoder：默认类型 OptionalDecoder中内嵌的 SpringDecoder类型进行处理
 				.decoder(get(context, Decoder.class))
+				//容器中获取到 Contract：默认类型 SpringMvcContract
 				.contract(get(context, Contract.class));
 		// @formatter:on
-
+		//再通过上下文对象进行构建
 		configureFeign(context, builder);
 
 		return builder;
 	}
 
 	protected void configureFeign(FeignContext context, Feign.Builder builder) {
+		//获取到配置文件对象
 		FeignClientProperties properties = applicationContext
 				.getBean(FeignClientProperties.class);
 
+		//获取到FeignClientConfigurer对象，通过子容器中
 		FeignClientConfigurer feignClientConfigurer = getOptional(context,
 				FeignClientConfigurer.class);
+		//设置是否需要继承父容器
 		setInheritParentContext(feignClientConfigurer.inheritParentConfiguration());
 
 		if (properties != null && inheritParentContext) {
@@ -140,26 +184,44 @@ class FeignClientFactoryBean
 			}
 		}
 		else {
+			//通过配置文件进行配置
 			configureUsingConfiguration(context, builder);
 		}
 	}
 
+	/**
+	 * 使用配置进行配置构建器
+	 * Logger.Level：日志级别
+	 * Retryer：重试器
+	 * ErrorDecoder：错误解码
+	 * FeignErrorDecoderFactory：错误解码工厂
+	 * Request.Options：配置读取和连接超时的时间
+	 * RequestInterceptor：请求的拦截器
+	 * QueryMapEncoder：查询映射的编码
+	 * ExceptionPropagationPolicy：异常传播的策略
+	 *
+	 * @param context
+	 * @param builder
+	 */
 	protected void configureUsingConfiguration(FeignContext context,
 			Feign.Builder builder) {
 		Logger.Level level = getInheritedAwareOptional(context, Logger.Level.class);
 		if (level != null) {
 			builder.logLevel(level);
 		}
+		//获取到重试器
 		Retryer retryer = getInheritedAwareOptional(context, Retryer.class);
 		if (retryer != null) {
 			builder.retryer(retryer);
 		}
+		//获取到错误的解码器
 		ErrorDecoder errorDecoder = getInheritedAwareOptional(context,
 				ErrorDecoder.class);
 		if (errorDecoder != null) {
 			builder.errorDecoder(errorDecoder);
 		}
 		else {
+			//获取到 FeignErrorDecoderFactory，通过工厂对象来进行创建
 			FeignErrorDecoderFactory errorDecoderFactory = getOptional(context,
 					FeignErrorDecoderFactory.class);
 			if (errorDecoderFactory != null) {
@@ -167,6 +229,7 @@ class FeignClientFactoryBean
 				builder.errorDecoder(factoryErrorDecoder);
 			}
 		}
+		//获取到 Options 配置对象来设置连接超时和读取超时的时间
 		Request.Options options = getInheritedAwareOptional(context,
 				Request.Options.class);
 		if (options != null) {
@@ -174,11 +237,13 @@ class FeignClientFactoryBean
 			readTimeoutMillis = options.readTimeoutMillis();
 			connectTimeoutMillis = options.connectTimeoutMillis();
 		}
+		//从容器中获取到拦截器 RequestInterceptor
 		Map<String, RequestInterceptor> requestInterceptors = getInheritedAwareInstances(
 				context, RequestInterceptor.class);
 		if (requestInterceptors != null) {
 			List<RequestInterceptor> interceptors = new ArrayList<>(
 					requestInterceptors.values());
+			//排序
 			AnnotationAwareOrderComparator.sort(interceptors);
 			builder.requestInterceptors(interceptors);
 		}
@@ -190,6 +255,7 @@ class FeignClientFactoryBean
 		if (decode404) {
 			builder.decode404();
 		}
+		//配置异常传播的策略
 		ExceptionPropagationPolicy exceptionPropagationPolicy = getInheritedAwareOptional(
 				context, ExceptionPropagationPolicy.class);
 		if (exceptionPropagationPolicy != null) {
@@ -328,14 +394,31 @@ class FeignClientFactoryBean
 	}
 
 	/**
-	 * @param <T> the target type of the Feign client
-	 * @return a {@link Feign} client created with the specified data and the context
-	 * information
+	 * 当前方法主要是通过从容器中获取到 Feign.Builder 类型进行配置，而 Feign.Builder 有两个实现类目前
+	 * DefaultTarget：当class路径下面没有 feign.hystrix.HystrixFeign 类时就创建当前
+	 * HystrixTargeter：当路径下面有 feign.hystrix.HystrixFeign 创建当前
 	 */
 	<T> T getTarget() {
+		//从spring中获取到 FeignContext 对象，在 FeignAutoConfiguration 进行的自动导入
 		FeignContext context = applicationContext.getBean(FeignContext.class);
+		/**
+		 * 根据上下文创建 Builder 进行创建
+		 * context 继承至 NamedContextFactory 会为每个接口都创建一个容器进行存储
+		 * 从容器中获取了 Feign.Builder 类型进行构建，并且通过配置信息进行配置，以下属性都是通过子容器中的配置进行获取
+		 *
+		 * Logger.Level：日志级别
+		 * Retryer：重试器
+		 * ErrorDecoder：错误解码
+		 * FeignErrorDecoderFactory：错误解码工厂
+		 * Request.Options：配置读取和连接超时的时间
+		 * RequestInterceptor：请求的拦截器
+		 * QueryMapEncoder：查询映射的编码
+		 * ExceptionPropagationPolicy：异常传播的策略
+		 */
 		Feign.Builder builder = feign(context);
-
+		/**
+		 * 处理url地址，如果没有指定url地址，拼接url地址为 http://name属性的值
+		 */
 		if (!StringUtils.hasText(url)) {
 			if (!name.startsWith("http")) {
 				url = "http://" + name;
@@ -347,10 +430,16 @@ class FeignClientFactoryBean
 			return (T) loadBalance(builder, context,
 					new HardCodedTarget<>(type, name, url));
 		}
+		//如果指定了url，并且不是http开头，默认拼接上http
 		if (StringUtils.hasText(url) && !url.startsWith("http")) {
 			url = "http://" + url;
 		}
+		//处理以下 /
 		String url = this.url + cleanPath();
+		/**
+		 * 从容器中获取到客户端对象，这个 Client 接口就是后续执行请求的类
+		 * 一般都是通过组件自定义实现，是否是负载的客户端等
+		 */
 		Client client = getOptional(context, Client.class);
 		if (client != null) {
 			if (client instanceof LoadBalancerFeignClient) {
@@ -365,6 +454,11 @@ class FeignClientFactoryBean
 			}
 			builder.client(client);
 		}
+		/**
+		 * 获取到 Targeter 通过target类型进行创建接口的代理对象有两个实现类
+		 * DefaultTarget：当class路径下面没有 feign.hystrix.HystrixFeign 类时就创建当前
+		 * HystrixTargeter：当路径下面有 feign.hystrix.HystrixFeign 创建当前
+		 */
 		Targeter targeter = get(context, Targeter.class);
 		return (T) targeter.target(this, builder, context,
 				new HardCodedTarget<>(type, name, url));

@@ -24,6 +24,15 @@ import feign.Target;
  */
 interface Targeter {
 
+	/**
+	 *
+	 * @param factory 工厂对象
+	 * @param feign feign的构建器
+	 * @param context：上下文
+	 * @param target：正常的创建器
+	 * @param <T>
+	 * @return
+	 */
 	<T> T target(FeignClientFactoryBean factory, Feign.Builder feign,
 			FeignContext context, Target.HardCodedTarget<T> target);
 
