@@ -36,6 +36,10 @@ import org.springframework.util.ConcurrentReferenceHashMap;
  */
 public class CachingSpringLoadBalancerFactory {
 
+
+
+
+	
 	/**
 	 * ribbon中进行自动配置的负载客户端工厂类
 	 */
