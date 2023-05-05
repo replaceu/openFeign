@@ -45,22 +45,17 @@ class DefaultFeignLoadBalancerConfiguration {
 	@ConditionalOnMissingBean
 	@Conditional(OnRetryNotEnabledCondition.class)
 	public Client feignClient(BlockingLoadBalancerClient loadBalancerClient) {
-		return new FeignBlockingLoadBalancerClient(new Client.Default(null, null),
-				loadBalancerClient);
+		return new FeignBlockingLoadBalancerClient(new Client.Default(null, null), loadBalancerClient);
 	}
 
 	@Bean
 	@ConditionalOnMissingBean
 	@ConditionalOnClass(name = "org.springframework.retry.support.RetryTemplate")
 	@ConditionalOnBean(LoadBalancedRetryFactory.class)
-	@ConditionalOnProperty(value = "spring.cloud.loadbalancer.retry.enabled",
-			havingValue = "true", matchIfMissing = true)
-	public Client feignRetryClient(BlockingLoadBalancerClient loadBalancerClient,
-			List<LoadBalancedRetryFactory> loadBalancedRetryFactories) {
+	@ConditionalOnProperty(value = "spring.cloud.loadbalancer.retry.enabled", havingValue = "true", matchIfMissing = true)
+	public Client feignRetryClient(BlockingLoadBalancerClient loadBalancerClient, List<LoadBalancedRetryFactory> loadBalancedRetryFactories) {
 		AnnotationAwareOrderComparator.sort(loadBalancedRetryFactories);
-		return new RetryableFeignBlockingLoadBalancerClient(
-				new Client.Default(null, null), loadBalancerClient,
-				loadBalancedRetryFactories.get(0));
+		return new RetryableFeignBlockingLoadBalancerClient(new Client.Default(null, null), loadBalancerClient, loadBalancedRetryFactories.get(0));
 	}
 
 }

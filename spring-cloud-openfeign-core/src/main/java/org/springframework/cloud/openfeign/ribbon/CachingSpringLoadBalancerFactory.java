@@ -36,10 +36,6 @@ import org.springframework.util.ConcurrentReferenceHashMap;
  */
 public class CachingSpringLoadBalancerFactory {
 
-
-
-
-	
 	/**
 	 * ribbon中进行自动配置的负载客户端工厂类
 	 */
@@ -56,8 +52,7 @@ public class CachingSpringLoadBalancerFactory {
 		this.factory = factory;
 	}
 
-	public CachingSpringLoadBalancerFactory(SpringClientFactory factory,
-			LoadBalancedRetryFactory loadBalancedRetryPolicyFactory) {
+	public CachingSpringLoadBalancerFactory(SpringClientFactory factory, LoadBalancedRetryFactory loadBalancedRetryPolicyFactory) {
 		this.factory = factory;
 		this.loadBalancedRetryFactory = loadBalancedRetryPolicyFactory;
 	}
@@ -65,21 +60,15 @@ public class CachingSpringLoadBalancerFactory {
 	public FeignLoadBalancer create(String clientName) {
 		//获取缓存中是否保存了
 		FeignLoadBalancer client = this.cache.get(clientName);
-		if (client != null) {
-			return client;
-		}
+		if (client != null) { return client; }
 		//通过springClientFactory工厂中获取到配置，默认是 RibbonClientConfiguration 中进行自动装配的
 		IClientConfig config = this.factory.getClientConfig(clientName);
 		//获取到ribbon中定义的负载器，默认是 RibbonClientConfiguration 中进行自动装配的 ZoneAwareLoadBalancer
 		ILoadBalancer lb = this.factory.getLoadBalancer(clientName);
 		//继续获取服务内省器
-		ServerIntrospector serverIntrospector = this.factory.getInstance(clientName,
-				ServerIntrospector.class);
+		ServerIntrospector serverIntrospector = this.factory.getInstance(clientName, ServerIntrospector.class);
 		//再根据是否存在重试工厂创建两个feign的负载器
-		client = this.loadBalancedRetryFactory != null
-				? new RetryableFeignLoadBalancer(lb, config, serverIntrospector,
-						this.loadBalancedRetryFactory)
-				: new FeignLoadBalancer(lb, config, serverIntrospector);
+		client = this.loadBalancedRetryFactory != null ? new RetryableFeignLoadBalancer(lb, config, serverIntrospector, this.loadBalancedRetryFactory) : new FeignLoadBalancer(lb, config, serverIntrospector);
 		//进行缓存
 		this.cache.put(clientName, client);
 		return client;

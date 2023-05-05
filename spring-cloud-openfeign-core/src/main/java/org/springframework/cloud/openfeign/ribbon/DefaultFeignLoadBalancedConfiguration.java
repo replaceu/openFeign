@@ -31,10 +31,8 @@ class DefaultFeignLoadBalancedConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public Client feignClient(CachingSpringLoadBalancerFactory cachingFactory,
-			SpringClientFactory clientFactory) {
-		return new LoadBalancerFeignClient(new Client.Default(null, null), cachingFactory,
-				clientFactory);
+	public Client feignClient(CachingSpringLoadBalancerFactory cachingFactory, SpringClientFactory clientFactory) {
+		return new LoadBalancerFeignClient(new Client.Default(null, null), cachingFactory, clientFactory);
 	}
 
 }
