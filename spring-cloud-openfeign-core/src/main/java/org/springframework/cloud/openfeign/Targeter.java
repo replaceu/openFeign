@@ -33,7 +33,6 @@ interface Targeter {
 	 * @param <T>
 	 * @return
 	 */
-	<T> T target(FeignClientFactoryBean factory, Feign.Builder feign,
-			FeignContext context, Target.HardCodedTarget<T> target);
+	<T> T target(FeignClientFactoryBean factory, Feign.Builder feign, FeignContext context, Target.HardCodedTarget<T> target);
 
 }
