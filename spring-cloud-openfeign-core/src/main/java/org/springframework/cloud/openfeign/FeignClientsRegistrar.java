@@ -222,12 +222,9 @@ class FeignClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLo
 		String alias = contextId + "FeignClient";
 		AbstractBeanDefinition beanDefinition = definition.getBeanDefinition();
 		beanDefinition.setAttribute(FactoryBean.OBJECT_TYPE_ATTRIBUTE, className);
-
 		// has a default, won't be null
 		boolean primary = (Boolean) attributes.get("primary");
-
 		beanDefinition.setPrimary(primary);
-
 		String qualifier = getQualifier(attributes);
 		if (StringUtils.hasText(qualifier)) {
 			alias = qualifier;
