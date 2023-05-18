@@ -46,19 +46,17 @@ public class PathVariableParameterProcessor implements AnnotatedParameterProcess
 	}
 
 	@Override
-	public boolean processArgument(AnnotatedParameterContext context,
-			Annotation annotation, Method method) {
+	public boolean processArgument(AnnotatedParameterContext context, Annotation annotation, Method method) {
+		//ANNOTATION就是@PathVariable，所以就获取它的值，也就是 @RequestMapping value 中的值
 		String name = ANNOTATION.cast(annotation).value();
-		checkState(emptyToNull(name) != null,
-				"PathVariable annotation was empty on param %s.",
-				context.getParameterIndex());
+		checkState(emptyToNull(name) != null, "PathVariable annotation was empty on param %s.", context.getParameterIndex());
+		// 将name设置为 ParameterName
 		context.setParameterName(name);
 
 		MethodMetadata data = context.getMethodMetadata();
+		//当varName的 url、quries、headers中不存在时，将name添加到formParams中，因为无法找到对应的值
 		String varName = '{' + name + '}';
-		if (!data.template().url().contains(varName)
-				&& !searchMapValues(data.template().queries(), varName)
-				&& !searchMapValues(data.template().headers(), varName)) {
+		if (!data.template().url().contains(varName) && !searchMapValues(data.template().queries(), varName) && !searchMapValues(data.template().headers(), varName)) {
 			data.formParams().add(name);
 		}
 		return true;
@@ -66,13 +64,9 @@ public class PathVariableParameterProcessor implements AnnotatedParameterProcess
 
 	private <K, V> boolean searchMapValues(Map<K, Collection<V>> map, V search) {
 		Collection<Collection<V>> values = map.values();
-		if (values == null) {
-			return false;
-		}
+		if (values == null) { return false; }
 		for (Collection<V> entry : values) {
-			if (entry.contains(search)) {
-				return true;
-			}
+			if (entry.contains(search)) { return true; }
 		}
 		return false;
 	}
