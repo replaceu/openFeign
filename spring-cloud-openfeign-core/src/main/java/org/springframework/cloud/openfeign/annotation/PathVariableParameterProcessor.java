@@ -54,7 +54,7 @@ public class PathVariableParameterProcessor implements AnnotatedParameterProcess
 		context.setParameterName(name);
 
 		MethodMetadata data = context.getMethodMetadata();
-		//当varName的 url、quries、headers中不存在时，将name添加到formParams中，因为无法找到对应的值
+		//当varName的 url、queries、headers中不存在时，将name添加到formParams中，因为无法找到对应的值
 		String varName = '{' + name + '}';
 		if (!data.template().url().contains(varName) && !searchMapValues(data.template().queries(), varName) && !searchMapValues(data.template().headers(), varName)) {
 			data.formParams().add(name);
