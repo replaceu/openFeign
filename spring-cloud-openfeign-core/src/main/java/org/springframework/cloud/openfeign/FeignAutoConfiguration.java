@@ -58,9 +58,11 @@ import org.springframework.context.annotation.Import;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(Feign.class)
-@EnableConfigurationProperties({ FeignClientProperties.class,
-		FeignHttpClientProperties.class })
+@EnableConfigurationProperties({ FeignClientProperties.class, FeignHttpClientProperties.class })
 @Import(DefaultGzipDecoderConfiguration.class)
+/**
+ * FeignAutoConfiguration是OpenFeign的自动配置类，它提供了FeignContext 、CloseableHttpClient、OkHttpClient 等实例
+ */
 public class FeignAutoConfiguration {
 
 	@Autowired(required = false)
@@ -113,8 +115,7 @@ public class FeignAutoConfiguration {
 	@ConditionalOnProperty(value = "feign.httpclient.enabled", matchIfMissing = true)
 	protected static class HttpClientFeignConfiguration {
 
-		private final Timer connectionManagerTimer = new Timer(
-				"FeignApacheHttpClientConfiguration.connectionManagerTimer", true);
+		private final Timer connectionManagerTimer = new Timer("FeignApacheHttpClientConfiguration.connectionManagerTimer", true);
 
 		@Autowired(required = false)
 		private RegistryBuilder registryBuilder;
@@ -123,16 +124,8 @@ public class FeignAutoConfiguration {
 
 		@Bean
 		@ConditionalOnMissingBean(HttpClientConnectionManager.class)
-		public HttpClientConnectionManager connectionManager(
-				ApacheHttpClientConnectionManagerFactory connectionManagerFactory,
-				FeignHttpClientProperties httpClientProperties) {
-			final HttpClientConnectionManager connectionManager = connectionManagerFactory
-					.newConnectionManager(httpClientProperties.isDisableSslValidation(),
-							httpClientProperties.getMaxConnections(),
-							httpClientProperties.getMaxConnectionsPerRoute(),
-							httpClientProperties.getTimeToLive(),
-							httpClientProperties.getTimeToLiveUnit(),
-							this.registryBuilder);
+		public HttpClientConnectionManager connectionManager(ApacheHttpClientConnectionManagerFactory connectionManagerFactory, FeignHttpClientProperties httpClientProperties) {
+			final HttpClientConnectionManager connectionManager = connectionManagerFactory.newConnectionManager(httpClientProperties.isDisableSslValidation(), httpClientProperties.getMaxConnections(), httpClientProperties.getMaxConnectionsPerRoute(), httpClientProperties.getTimeToLive(), httpClientProperties.getTimeToLiveUnit(), this.registryBuilder);
 			this.connectionManagerTimer.schedule(new TimerTask() {
 				@Override
 				public void run() {
@@ -143,16 +136,9 @@ public class FeignAutoConfiguration {
 		}
 
 		@Bean
-		public CloseableHttpClient httpClient(ApacheHttpClientFactory httpClientFactory,
-				HttpClientConnectionManager httpClientConnectionManager,
-				FeignHttpClientProperties httpClientProperties) {
-			RequestConfig defaultRequestConfig = RequestConfig.custom()
-					.setConnectTimeout(httpClientProperties.getConnectionTimeout())
-					.setRedirectsEnabled(httpClientProperties.isFollowRedirects())
-					.build();
-			this.httpClient = httpClientFactory.createBuilder()
-					.setConnectionManager(httpClientConnectionManager)
-					.setDefaultRequestConfig(defaultRequestConfig).build();
+		public CloseableHttpClient httpClient(ApacheHttpClientFactory httpClientFactory, HttpClientConnectionManager httpClientConnectionManager, FeignHttpClientProperties httpClientProperties) {
+			RequestConfig defaultRequestConfig = RequestConfig.custom().setConnectTimeout(httpClientProperties.getConnectionTimeout()).setRedirectsEnabled(httpClientProperties.isFollowRedirects()).build();
+			this.httpClient = httpClientFactory.createBuilder().setConnectionManager(httpClientConnectionManager).setDefaultRequestConfig(defaultRequestConfig).build();
 			return this.httpClient;
 		}
 
@@ -183,9 +169,7 @@ public class FeignAutoConfiguration {
 
 		@Bean
 		@ConditionalOnMissingBean(ConnectionPool.class)
-		public ConnectionPool httpClientConnectionPool(
-				FeignHttpClientProperties httpClientProperties,
-				OkHttpClientConnectionPoolFactory connectionPoolFactory) {
+		public ConnectionPool httpClientConnectionPool(FeignHttpClientProperties httpClientProperties, OkHttpClientConnectionPoolFactory connectionPoolFactory) {
 			Integer maxTotalConnections = httpClientProperties.getMaxConnections();
 			Long timeToLive = httpClientProperties.getTimeToLive();
 			TimeUnit ttlUnit = httpClientProperties.getTimeToLiveUnit();
@@ -193,16 +177,11 @@ public class FeignAutoConfiguration {
 		}
 
 		@Bean
-		public okhttp3.OkHttpClient client(OkHttpClientFactory httpClientFactory,
-				ConnectionPool connectionPool,
-				FeignHttpClientProperties httpClientProperties) {
+		public okhttp3.OkHttpClient client(OkHttpClientFactory httpClientFactory, ConnectionPool connectionPool, FeignHttpClientProperties httpClientProperties) {
 			Boolean followRedirects = httpClientProperties.isFollowRedirects();
 			Integer connectTimeout = httpClientProperties.getConnectionTimeout();
 			Boolean disableSslValidation = httpClientProperties.isDisableSslValidation();
-			this.okHttpClient = httpClientFactory.createBuilder(disableSslValidation)
-					.connectTimeout(connectTimeout, TimeUnit.MILLISECONDS)
-					.followRedirects(followRedirects).connectionPool(connectionPool)
-					.build();
+			this.okHttpClient = httpClientFactory.createBuilder(disableSslValidation).connectTimeout(connectTimeout, TimeUnit.MILLISECONDS).followRedirects(followRedirects).connectionPool(connectionPool).build();
 			return this.okHttpClient;
 		}
 

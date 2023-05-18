@@ -40,13 +40,7 @@ import org.springframework.context.annotation.Import;
 @Documented
 @Import(FeignClientsRegistrar.class)
 public @interface EnableFeignClients {
-
-	/**
-	 * Alias for the {@link #basePackages()} attribute. Allows for more concise annotation
-	 * declarations e.g.: {@code @ComponentScan("org.my.pkg")} instead of
-	 * {@code @ComponentScan(basePackages="org.my.pkg")}.
-	 * @return the array of 'basePackages'.
-	 */
+	//指定需要的扫描包，下面的两个函数也是如此
 	String[] value() default {};
 
 	/**
@@ -70,21 +64,10 @@ public @interface EnableFeignClients {
 	 */
 	Class<?>[] basePackageClasses() default {};
 
-	/**
-	 * A custom <code>@Configuration</code> for all feign clients. Can contain override
-	 * <code>@Bean</code> definition for the pieces that make up the client, for instance
-	 * {@link feign.codec.Decoder}, {@link feign.codec.Encoder}, {@link feign.Contract}.
-	 *
-	 * @see FeignClientsConfiguration for the defaults
-	 * @return list of default configurations
-	 */
+	//指定自定义feign client的自定义配置，配置Decoder、Encoder、Contract等组件
 	Class<?>[] defaultConfiguration() default {};
 
-	/**
-	 * List of classes annotated with @FeignClient. If not empty, disables classpath
-	 * scanning.
-	 * @return list of FeignClient classes
-	 */
+	//指定被 @FeignClients 修饰的类，如果不为空，那么路径自动检测则会被关闭
 	Class<?>[] clients() default {};
 
 }

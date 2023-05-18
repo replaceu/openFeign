@@ -138,7 +138,7 @@ class FeignClientFactoryBean implements FactoryBean<Object>, InitializingBean, A
 		FeignLoggerFactory loggerFactory = get(context, FeignLoggerFactory.class);
 		Logger logger = loggerFactory.create(type);
 
-		//先从容器中获取到 Builder 类型，在 FeignClientsConfiguration 就进行了初始化，如果导入了hystrix的包，那么就会创建为 feign.hystrix.HystrixFeign.Builder 类型
+		//先从容器中获取到Builder类型，在 FeignClientsConfiguration 就进行了初始化，如果导入了hystrix的包，那么就会创建为 feign.hystrix.HystrixFeign.Builder 类型
 		Feign.Builder builder = get(context, Feign.Builder.class)
 				// required values
 				.logger(logger)
@@ -351,6 +351,12 @@ class FeignClientFactoryBean implements FactoryBean<Object>, InitializingBean, A
 		throw new IllegalStateException("No Feign Client for loadBalancing defined. Did you forget to include spring-cloud-starter-netflix-ribbon?");
 	}
 
+	/**
+	 * FeignClientFactoryBean 是工厂类，Spring 容器通过调用它的 FeignClientFactoryBean#getObject 方法来获取对应的 Bean 实例。
+	 * 被 @FeignClient 注解修饰的接口都是通过 FeignClientFactoryBean#getObject 方法进行实例化
+	 * @return
+	 * @throws Exception
+	 */
 	@Override
 	public Object getObject() throws Exception {
 		return getTarget();
@@ -397,11 +403,9 @@ class FeignClientFactoryBean implements FactoryBean<Object>, InitializingBean, A
 		}
 		//处理以下 /
 		String url = this.url + cleanPath();
-		/**
-		 * 从容器中获取到客户端对象，这个 Client 接口就是后续执行请求的类
-		 * 一般都是通过组件自定义实现，是否是负载的客户端等
-		 */
+		//调用FeignClient的getInstance方法获取 client 对象
 		Client client = getOptional(context, Client.class);
+		//因为有具体 url，所以就不需要负载均衡，所以除去LoadBalancerFeignClient实例
 		if (client != null) {
 			if (client instanceof LoadBalancerFeignClient) {
 				// not load balancing because we have a url,

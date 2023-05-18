@@ -135,20 +135,23 @@ class FeignClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLo
 	public void registerBeanDefinitions(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
 		/**
 		 * 注解注解上面标记的 defaultConfiguration 配置对象，配置类通过class进行表示
-		 * 使用 FeignClientSpecification 对其进行包装
+		 * 使用FeignClientSpecification对其进行包装
+		 * 从 EnableFeignClients 的属性来构建 Feign 的自定义 Configuration 进行注册
 		 */
 		registerDefaultConfiguration(metadata, registry);
 		/**
-		 * 处理 @FeignClient 注解并且会将注解中配置的 configuration 属性也注册到容器当中
+		 * 处理 @FeignClient注解并且会将注解中配置的 configuration 属性也注册到容器当中
 		 * bean定义的名称 @FeignClient[name].FeignClientSpecification.class.name，然后将接口注入
 		 * 然后将接口包装成 FeignClientFactoryBean 类型
+		 * 从扫描 package，注册被 @FeignClient修饰的接口类，然后将其注册成 Bean 实例
 		 */
 		registerFeignClients(metadata, registry);
 	}
 
 	private void registerDefaultConfiguration(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
+		//从metadata中获取关于@EnableFeignClients注解属性的键值对
 		Map<String, Object> defaultAttrs = metadata.getAnnotationAttributes(EnableFeignClients.class.getName(), true);
-
+		//如果EnableFeignClients配置了defaultConfiguration，那么才进行下一步动作，否则便会使用默认的 FeignConfiguration
 		if (defaultAttrs != null && defaultAttrs.containsKey("defaultConfiguration")) {
 			String name;
 			if (metadata.hasEnclosingClass()) {
@@ -163,15 +166,21 @@ class FeignClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLo
 	public void registerFeignClients(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
 
 		LinkedHashSet<BeanDefinition> candidateComponents = new LinkedHashSet<>();
+		//获取 EnableFeignClients 所有属性的集合
 		Map<String, Object> attrs = metadata.getAnnotationAttributes(EnableFeignClients.class.getName());
 		AnnotationTypeFilter annotationTypeFilter = new AnnotationTypeFilter(FeignClient.class);
 		final Class<?>[] clients = attrs == null ? null : (Class<?>[]) attrs.get("clients");
 		if (clients == null || clients.length == 0) {
+			//生成自定义的 ClassPathScanningProvider
 			ClassPathScanningCandidateComponentProvider scanner = getScanner();
 			scanner.setResourceLoader(this.resourceLoader);
+			//根据 Annotation 来进行类型过滤，只会扫描被 @FeignClient 注解修饰的接口类
 			scanner.addIncludeFilter(new AnnotationTypeFilter(FeignClient.class));
+			//获取所有的 Packages
 			Set<String> basePackages = getBasePackages(metadata);
+			//遍历上述所获取的 basePackages
 			for (String basePackage : basePackages) {
+				//放到candidateComponents
 				candidateComponents.addAll(scanner.findCandidateComponents(basePackage));
 			}
 		} else {
@@ -179,19 +188,20 @@ class FeignClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLo
 				candidateComponents.add(new AnnotatedGenericBeanDefinition(clazz));
 			}
 		}
-
+		// 遍历所有的 candidateComponents
 		for (BeanDefinition candidateComponent : candidateComponents) {
 			if (candidateComponent instanceof AnnotatedBeanDefinition) {
 				// verify annotated class is an interface
 				AnnotatedBeanDefinition beanDefinition = (AnnotatedBeanDefinition) candidateComponent;
 				AnnotationMetadata annotationMetadata = beanDefinition.getMetadata();
 				Assert.isTrue(annotationMetadata.isInterface(), "@FeignClient can only be specified on an interface");
-
+				//从这些BeanDefinition中获取FeignClient的属性
 				Map<String, Object> attributes = annotationMetadata.getAnnotationAttributes(FeignClient.class.getCanonicalName());
 
 				String name = getClientName(attributes);
+				//对某个单独的 FeignClient的configuration进行配置
 				registerClientConfiguration(registry, name, attributes.get("configuration"));
-
+				//注册 FeignClient 的 BeanDefinition
 				registerFeignClient(registry, annotationMetadata, attributes);
 			}
 		}
@@ -282,7 +292,9 @@ class FeignClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLo
 			@Override
 			protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
 				boolean isCandidate = false;
+				// 判断beanDefinition是否是内部类，否则直接返回 false
 				if (beanDefinition.getMetadata().isIndependent()) {
+					// 判断是否为接口类，所有实现的接口是有一个，并且该接口是 Annotation，否则直接返回false
 					if (!beanDefinition.getMetadata().isAnnotation()) {
 						isCandidate = true;
 					}
@@ -344,6 +356,7 @@ class FeignClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLo
 		BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(FeignClientSpecification.class);
 		builder.addConstructorArgValue(name);
 		builder.addConstructorArgValue(configuration);
+		//使用 BeanDefinitionBuilder 生成 BeanDefinition，然后通过 BeanDefinitionRegistry 进行注册
 		registry.registerBeanDefinition(name + "." + FeignClientSpecification.class.getSimpleName(), builder.getBeanDefinition());
 	}
 
