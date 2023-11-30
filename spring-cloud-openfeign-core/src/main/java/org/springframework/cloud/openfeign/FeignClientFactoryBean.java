@@ -142,7 +142,7 @@ class FeignClientFactoryBean implements FactoryBean<Object>, InitializingBean, A
 		Feign.Builder builder = get(context, Feign.Builder.class)
 				// required values
 				.logger(logger)
-				//容器中获取到 Encoder：默认类型 SpringEncoder
+				//容器中获取到 Encoder：默认类型SpringEncoder
 				.encoder(get(context, Encoder.class))
 				//容器中获取到 Decoder：默认类型 OptionalDecoder中内嵌的 SpringDecoder类型进行处理
 				.decoder(get(context, Decoder.class))

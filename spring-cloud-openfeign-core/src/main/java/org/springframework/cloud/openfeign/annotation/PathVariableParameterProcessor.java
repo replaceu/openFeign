@@ -50,7 +50,7 @@ public class PathVariableParameterProcessor implements AnnotatedParameterProcess
 		//ANNOTATION就是@PathVariable，所以就获取它的值，也就是 @RequestMapping value 中的值
 		String name = ANNOTATION.cast(annotation).value();
 		checkState(emptyToNull(name) != null, "PathVariable annotation was empty on param %s.", context.getParameterIndex());
-		// 将name设置为 ParameterName
+		// 将name设置为ParameterName
 		context.setParameterName(name);
 
 		MethodMetadata data = context.getMethodMetadata();
